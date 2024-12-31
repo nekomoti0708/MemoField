@@ -11,13 +11,20 @@
         }
         textarea {
             width: 100%;
-            min-height: 100px; /* 最小高さ */
+            min-height: 100px;
             padding: 10px;
             font-size: 16px;
             border: 1px solid #ccc;
             border-radius: 5px;
-            resize: none; /* 手動でのリサイズを無効化 */
-            overflow: hidden; /* 自動調整時のスクロールバーを隠す */
+            resize: none;
+            overflow: hidden;
+        }
+        input {
+            font-size: 16px;
+            padding: 5px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
         button {
             padding: 10px 15px;
@@ -31,20 +38,17 @@
         button:hover {
             background-color: #45a049;
         }
-
-        /* ボタンラッパー */
         .button-wrapper {
             display: flex;
-            gap: 10px; /* ボタン間の間隔 */
+            gap: 10px;
             align-items: center;
             margin-bottom: 10px;
         }
 
-        /* カスタムファイル選択ボタン */
         .file-input-wrapper {
+            display: inline-block;
             position: relative;
         }
-
         #fileInput {
             position: absolute;
             top: 0;
@@ -54,7 +58,6 @@
             opacity: 0;
             cursor: pointer;
         }
-
         .file-input-button {
             padding: 10px 15px;
             background-color: rgb(0, 0, 255);
@@ -63,8 +66,8 @@
             border-radius: 5px;
             font-size: 16px;
             cursor: pointer;
+            display: inline-block;
         }
-
         .file-input-button:hover {
             background-color: darkred;
         }
@@ -85,53 +88,69 @@
     <button onclick="saveFile()">ファイル保存</button>
 </div>
 
+<div class="button-wrapper">
+    <input type="text" id="fileNameInput" placeholder="ファイル名" />
+    <input type="text" id="fileExtensionInput" placeholder="拡張子" />
+    <input type="number" id="fontSizeInput" placeholder="文字サイズ" min="8" max="72" value="16" />
+</div>
+
 <textarea id="textArea" placeholder="ここにメモを入力してください..."></textarea>
 
 <script>
-    let currentFileName = null; // 現在開いているファイル名を保持する変数
+    let currentFileName = null;
+    let currentFileExtension = null;
+
+    const textArea = document.getElementById('textArea');
+    const fontSizeInput = document.getElementById('fontSizeInput');
 
     // テキストエリアの自動リサイズ
-    const textArea = document.getElementById('textArea');
     textArea.addEventListener('input', function() {
-        textArea.style.height = 'auto'; // 高さを一旦リセット
-        textArea.style.height = textArea.scrollHeight + 'px'; // 内容に合わせた高さに設定
+        textArea.style.height = 'auto';
+        textArea.style.height = textArea.scrollHeight + 'px';
     });
 
     // ファイル読み込み
     document.getElementById('fileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
-            currentFileName = file.name; // ファイル名を記録
+            const fileNameParts = file.name.split('.');
+            currentFileName = fileNameParts.slice(0, -1).join('.') || file.name;
+            currentFileExtension = fileNameParts.pop();
             const reader = new FileReader();
             reader.onload = function(event) {
                 textArea.value = event.target.result;
-                textArea.dispatchEvent(new Event('input')); // テキストエリアの高さを調整
+                textArea.dispatchEvent(new Event('input'));
             };
             reader.readAsText(file);
+
+            document.getElementById('fileNameInput').value = currentFileName;
+            document.getElementById('fileExtensionInput').value = currentFileExtension;
         }
     });
 
     // ファイル保存
     function saveFile() {
         const text = textArea.value;
-
-        let fileName;
-        if (currentFileName) {
-            // ファイルが開かれている場合、そのファイル名で保存
-            fileName = currentFileName;
-        } else {
-            // ファイルが開かれていない場合、「新規テキスト」をデフォルト名として使用
-            fileName = '新規テキスト.txt';
-        }
-
+        const fileNameInput = document.getElementById('fileNameInput').value.trim();
+        const fileExtensionInput = document.getElementById('fileExtensionInput').value.trim();
+        let fileName = fileNameInput || currentFileName || '新規text';
+        let fileExtension = fileExtensionInput || currentFileExtension || 'txt';
+        const fullFileName = `${fileName}.${fileExtension}`;
         const blob = new Blob([text], { type: 'text/plain' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        
-        // 保存するファイル名を指定
-        link.download = fileName;
+        link.download = fullFileName;
         link.click();
     }
+
+    // 文字サイズの更新（リアルタイム）
+    fontSizeInput.addEventListener('input', function() {
+        const fontSize = Math.min(Math.max(Number(fontSizeInput.value.trim()), 8), 72); // サイズ制限
+        textArea.style.fontSize = `${fontSize}px`;
+    });
+
+    // 初期文字サイズの設定
+    textArea.style.fontSize = `${fontSizeInput.value}px`;
 </script>
 
 </body>
