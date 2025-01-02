@@ -94,6 +94,13 @@
     <input type="number" id="fontSizeInput" placeholder="文字サイズ" min="8" max="72" value="16" />
 </div>
 
+<div class="button-wrapper">
+    <label>
+        <input type="checkbox" id="enableLocalStorage" checked />
+        ローカルストレージに保存
+    </label>
+</div>
+
 <textarea id="textArea" placeholder="ここにメモを入力してください..."></textarea>
 
 <script>
@@ -102,11 +109,37 @@
 
     const textArea = document.getElementById('textArea');
     const fontSizeInput = document.getElementById('fontSizeInput');
+    const enableLocalStorage = document.getElementById('enableLocalStorage');
 
-    // テキストエリアの自動リサイズ
+    // ローカルストレージキー
+    const LOCAL_STORAGE_KEY = 'webMemoText';
+
+    // ページ読み込み時の復元
+    window.addEventListener('load', function() {
+        const savedText = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (savedText && enableLocalStorage.checked) {
+            textArea.value = savedText;
+            textArea.dispatchEvent(new Event('input')); // 自動リサイズを適用
+        }
+    });
+
+    // テキストエリアの自動リサイズとローカルストレージ保存
     textArea.addEventListener('input', function() {
         textArea.style.height = 'auto';
         textArea.style.height = textArea.scrollHeight + 'px';
+
+        // ローカルストレージに保存（チェックボックスがオンの場合のみ）
+        if (enableLocalStorage.checked) {
+            localStorage.setItem(LOCAL_STORAGE_KEY, textArea.value);
+        }
+    });
+
+    // チェックボックスの切り替え
+    enableLocalStorage.addEventListener('change', function() {
+        if (!enableLocalStorage.checked) {
+            // ローカルストレージから削除
+            localStorage.removeItem(LOCAL_STORAGE_KEY);
+        }
     });
 
     // ファイル読み込み
